@@ -7,18 +7,18 @@ Page({
     bannerList: [
       {
         id: 1,
-        imageUrl: '/images/banners/banner1.png',
-        link: ''
+        imageUrl: '',
+        link: 'cloud://pharm-prep-2g3a9oq5b57fa359.7068-pharm-prep-2g3a9oq5b57fa359-1329430978/images/banners/banner1.png'
       },
       {
         id: 2,
-        imageUrl: '/images/banners/banner2.png',
-        link: ''
+        imageUrl: '',
+        link: 'cloud://pharm-prep-2g3a9oq5b57fa359.7068-pharm-prep-2g3a9oq5b57fa359-1329430978/images/banners/banner2.png'
       },
       {
         id: 3,
-        imageUrl: '/images/banners/banner3.png',
-        link: ''
+        imageUrl: '',
+        link: 'cloud://pharm-prep-2g3a9oq5b57fa359.7068-pharm-prep-2g3a9oq5b57fa359-1329430978/images/banners/banner3.png'
       }
     ],
     recommendList: [
@@ -43,6 +43,13 @@ Page({
   onLoad() {
     // 初始化倒计时
     this.initCountdown()
+    // 仅针对轮播图：使用 link 作为云文件ID加载临时链接
+    this.bannerFileIDs = (this.data.bannerList || []).map(item => String(item.link || '').trim())
+    // 首帧不渲染 cloud://，先清空 imageUrl，待获取临时链接后再填充
+    this.setData({
+      bannerList: (this.data.bannerList || []).map(item => ({ ...item, imageUrl: '' }))
+    })
+    this.loadBannerImages()
   },
 
   onShow() {
@@ -95,6 +102,39 @@ Page({
     this.setData({
       countdown: {
         days
+      }
+    })
+  },
+
+  // 仅轮播图：从 link（cloud 文件ID）换取临时 HTTPS 链接并填充到 imageUrl
+  loadBannerImages() {
+    const fileList = (this.bannerFileIDs || []).filter(id => typeof id === 'string' && id.startsWith('cloud://'))
+    if (fileList.length === 0) return
+
+    wx.cloud.getTempFileURL({
+      fileList,
+      success: res => {
+        console.info("res.fileList", res.fileList)
+        // 直接使用 map 生成新列表，简化逻辑
+        const newBannerList = (this.data.bannerList || []).map((item, idx) => {
+          const fileID = this.bannerFileIDs[idx]
+          // 在结果中找到对应的 fileID
+          const fileItem = res.fileList.find(i => i.fileID === fileID)
+          
+          if (fileItem && fileItem.status === 0) {
+            console.info(`图片加载成功: ${fileID}`)
+            return { ...item, imageUrl: fileItem.tempFileURL }
+          } else {
+            console.warn(`图片加载失败或状态异常: ${fileID}`, fileItem)
+            return item
+          }
+        })
+        
+        this.setData({ bannerList: newBannerList })
+        console.info("更新后的 bannerList:", newBannerList)
+      },
+      fail: err => {
+        console.error('轮播图云图片加载失败', err)
       }
     })
   },
