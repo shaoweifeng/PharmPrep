@@ -21,5 +21,5 @@ App({
     userInfo: null,
     systemInfo: null,
     examDate: '2026-12-31', // 考研日期，可根据实际情况修改
-  },
+  }
 })
