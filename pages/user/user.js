@@ -7,7 +7,10 @@ Page({
     totalQuestions: 0,
     correctQuestions: 0,
     accuracy: 0,
-    studyDays: 0
+    studyDays: 0,
+    showLoginModal: false,
+    tempAvatarUrl: '',
+    tempNickName: ''
   },
 
   onLoad() {
@@ -61,22 +64,144 @@ Page({
   // 点击用户信息区域
   onTapUserInfo() {
     if (!this.data.hasUserInfo) {
-      this.getUserProfile()
+      this.setData({
+        showLoginModal: true,
+        tempAvatarUrl: '',
+        tempNickName: ''
+      })
     }
+  },
+
+  // 关闭登录弹窗
+  closeLoginModal() {
+    this.setData({
+      showLoginModal: false
+    })
+  },
+
+  // 选择头像
+  onChooseAvatar(e) {
+    const { avatarUrl } = e.detail
+    this.setData({
+      tempAvatarUrl: avatarUrl
+    })
+  },
+
+  // 昵称输入
+  onNicknameChange(e) {
+    this.setData({
+      tempNickName: e.detail.value
+    })
+  },
+
+  onNicknameInput(e) {
+    this.setData({
+      tempNickName: e.detail.value
+    })
+  },
+
+  // 提交用户信息
+  submitUserInfo() {
+    const { tempAvatarUrl, tempNickName } = this.data
+    if (!tempAvatarUrl || !tempNickName) {
+      wx.showToast({
+        title: '请完善头像和昵称',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showLoading({
+      title: '同步中...',
+    })
+
+    // 调用云函数登录/注册
+    wx.cloud.callFunction({
+      name: 'login',
+      data: {
+        avatarUrl: tempAvatarUrl,
+        nickName: tempNickName
+      },
+      success: (res) => {
+        wx.hideLoading()
+        if (res.result && res.result.code === 0) {
+          const userInfo = res.result.data
+          
+          this.setData({
+            userInfo,
+            hasUserInfo: true,
+            showLoginModal: false,
+            // 同时更新统计数据（如果云端返回了）
+            totalQuestions: userInfo.totalQuestions || 0,
+            correctQuestions: userInfo.correctQuestions || 0,
+            studyDays: userInfo.studyDays || 0
+          })
+          
+          // 更新正确率
+          if (this.data.totalQuestions > 0) {
+            const accuracy = Math.round((this.data.correctQuestions / this.data.totalQuestions) * 100)
+            this.setData({ accuracy })
+          }
+
+          wx.setStorageSync('userInfo', userInfo)
+          
+          wx.showToast({
+            title: '同步成功',
+            icon: 'success'
+          })
+        } else {
+          wx.showToast({
+            title: '同步失败，请重试',
+            icon: 'none'
+          })
+        }
+      },
+      fail: (err) => {
+        wx.hideLoading()
+        console.error('云函数调用失败', err)
+        wx.showToast({
+          title: '网络错误',
+          icon: 'none'
+        })
+      }
+    })
   },
 
   // 编辑用户资料
   editUserInfo() {
-    if (!this.data.hasUserInfo) {
-      this.getUserProfile()
-      return
-    }
-    
-    wx.showToast({
-      title: '编辑资料功能开发中',
-      icon: 'none'
+    // 复用登录弹窗逻辑
+    const { userInfo, hasUserInfo } = this.data
+    this.setData({
+      showLoginModal: true,
+      tempAvatarUrl: hasUserInfo ? userInfo.avatarUrl : '',
+      tempNickName: hasUserInfo ? userInfo.nickName : ''
     })
   },
+  // 退出登录
+  logout() {
+    wx.showModal({
+      title: '提示',
+      content: '确定要退出登录吗？',
+      success: (res) => {
+        if (res.confirm) {
+          // 清除本地存储
+          wx.removeStorageSync('userInfo')
+          
+          // 更新页面状态
+          this.setData({
+            userInfo: {},
+            hasUserInfo: false
+          })
+          
+          wx.showToast({
+            title: '已退出登录',
+            icon: 'none'
+          })
+        }
+      }
+    })
+  },
+
   loadStudyStats() {
     // 这里可以从本地缓存或云数据库获取学习统计数据
     // 暂时使用模拟数据

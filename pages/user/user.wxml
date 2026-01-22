@@ -9,9 +9,13 @@
       <view class="user-name">{{hasUserInfo && userInfo.nickName ? userInfo.nickName : '点击登陆'}}</view>
       <view class="user-desc">{{hasUserInfo ? '开始你的考研之旅吧！' : '登录后同步学习数据'}}</view>
     </view>
-    <view class="user-edit" bindtap="editUserInfo">
-      <text class="edit-text">编辑资料</text>
-      <image src="/images/icons/edit.png" mode="aspectFit" class="edit-icon"></image>
+    <view class="user-action-area">
+      <view class="action-btn" bindtap="editUserInfo">
+        <text>编辑资料</text>
+      </view> 
+      <view class="action-btn" bindtap="logout" wx:if="{{hasUserInfo}}">
+        <text>退出登录</text>
+      </view>
     </view>
   </view>
 
@@ -87,6 +91,28 @@
       </view>
       <view class="menu-right">
         <text class="menu-arrow">→</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 登录/完善资料弹窗 -->
+  <view class="login-modal" wx:if="{{showLoginModal}}">
+    <view class="modal-mask" bindtap="closeLoginModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">完善个人信息</view>
+      <view class="modal-body">
+        <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+          <image class="avatar-preview" src="{{tempAvatarUrl || '/images/avatar/default.png'}}"></image>
+        </button>
+        <view class="avatar-tip">点击修改头像</view>
+        <view class="input-group">
+          <text class="label">昵称</text>
+          <input type="nickname" class="nickname-input" placeholder="请输入昵称" bind:change="onNicknameChange" bindinput="onNicknameInput" value="{{tempNickName}}"/>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-cancel" bindtap="closeLoginModal">取消</button>
+        <button class="btn-confirm" bindtap="submitUserInfo">确定</button>
       </view>
     </view>
   </view>
