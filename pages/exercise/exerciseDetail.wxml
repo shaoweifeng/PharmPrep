@@ -47,7 +47,7 @@
             <text class="label">正确答案：</text>
             <text class="value correct-text">{{currentQuestion.correctAnswer}}</text>
           </view>
-          <view class="result-item">
+          <view class="result-item" wx:if="{{reviewType !== 'favorite'}}">
             <text class="label">你的答案：</text>
             <text class="value {{isCorrect ? 'correct-text' : 'wrong-text'}}">{{userAnswer || '未作答'}}</text>
           </view>

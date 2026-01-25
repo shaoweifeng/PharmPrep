@@ -63,30 +63,9 @@ Page({
       
       if (subject && subject.data) {
         // 在题库中查找题目
-        // 注意：questionId 在数据库存的是 string 还是 number？需要注意类型转换
-        // 假设题库里的 No 是 number，数据库存的是 string，这里做宽松比较
-        // 另外题库数据结构是 prompt1_result 数组
-        // 这里假设 questionId 对应的是 index 或者是 No
-        // 在 exerciseDetail.js 里看到 id: item.No || index
-        // 我们需要一种可靠的方式找到题目。如果之前存的是 index，那直接取。
-        // 如果存的是 item.No，则需要 find。
-        // 为了保险，先尝试当 index 取，如果不对再遍历。
-        // *重要*：在 exerciseDetail.js 里，id 是 item.No || index。
-        // 最好在 exerciseDetail.js 里确认一下 id 的生成逻辑。
-        // 假设 id 是可靠的唯一标识。
-        
-        // 尝试查找
-        const qIndex = parseInt(questionId)
-        if (!isNaN(qIndex) && subject.data[qIndex]) {
-           const q = subject.data[qIndex]
-           // 再次确认 id 是否匹配 (如果 id 是 No)
-           // 如果 id 仅仅是 index，那直接取 title
-           questionTitle = q.question
-        } else {
-          // 遍历查找 (如果 id 是 No)
-          const found = subject.data.find((q, idx) => String(q.No || idx) === String(questionId))
-          if (found) questionTitle = found.question
-        }
+        // 修复：直接使用 find 查找，避免直接使用索引导致的错位问题
+        const found = subject.data.find((q, idx) => String(q.No || idx) === String(questionId))
+        if (found) questionTitle = found.question
       }
 
       return {
@@ -121,7 +100,7 @@ Page({
     
     wx.setStorageSync('reviewList', this.data.list)
     
-    let url = `/pages/exercise/exerciseDetail?subjectId=${subjectId}&questionId=${questionId}&mode=review&listIndex=${currentIndex}`
+    let url = `/pages/exercise/exerciseDetail?subjectId=${subjectId}&questionId=${questionId}&mode=review&listIndex=${currentIndex}&type=${this.data.type}`
     
     wx.navigateTo({ url })
   }

@@ -15,13 +15,15 @@ Page({
       1: '单选题',
       2: '多选题',
       3: '判断题'
-    }
+    },
+    reviewType: ''
   },
 
   onLoad(options) {
-    const { subjectId, subjectName, mode, listIndex } = options
+    const { subjectId, subjectName, mode, listIndex, type } = options
     this.subjectId = subjectId // 保存到实例变量
     this.mode = mode || 'practice' // practice, review
+    this.setData({ reviewType: type || '' })
 
     if (subjectName) {
       wx.setNavigationBarTitle({
@@ -68,12 +70,8 @@ Page({
 
       if (subject && subject.data) {
         // 查找逻辑同 record-list
-        const qIndex = parseInt(questionId)
-        if (!isNaN(qIndex) && subject.data[qIndex]) {
-           questionData = subject.data[qIndex]
-        } else {
-           questionData = subject.data.find((q, idx) => String(q.No || idx) === String(questionId))
-        }
+        // 修复：直接使用 find 查找，避免直接使用索引导致的错位问题（因为 No 通常从 1 开始，而索引从 0 开始）
+        questionData = subject.data.find((q, idx) => String(q.No || idx) === String(questionId))
       }
 
       if (!questionData) return null
@@ -522,6 +520,16 @@ Page({
         })
       }
     })
+  },
+
+  // 下一题
+  nextQuestion() {
+    if (this.data.currentIndex < this.data.totalCount - 1) {
+      const newIndex = this.data.currentIndex + 1
+      this.switchQuestion(newIndex)
+    } else {
+      wx.navigateBack()
+    }
   },
 
   // 显示答题卡
