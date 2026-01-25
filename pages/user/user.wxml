@@ -12,7 +12,6 @@
     <view class="user-action-area">
       <view class="action-btn" bindtap="editUserInfo">
         <text>编辑资料</text>
-        <image src="{{staticImages.editIcon}}" mode="aspectFit" class="action-icon"></image>
       </view>
       <view class="action-btn" bindtap="logout" wx:if="{{hasUserInfo}}">
         <text>退出登录</text>

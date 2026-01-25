@@ -20,13 +20,72 @@ Page({
 
   onLoad(options) {
     const { subjectId, subjectName } = options
+    this.subjectId = subjectId // 保存到实例变量
+    
     if (subjectName) {
       wx.setNavigationBarTitle({
         title: subjectName + '练习'
       })
     }
     
+    // 1. 先加载题目
     this.loadQuestions(subjectId)
+
+    // 2. 再加载云端进度
+    this.loadCloudProgress(subjectId)
+  },
+
+  // 加载云端进度
+  loadCloudProgress(subjectId) {
+    wx.showLoading({ title: '同步进度中...' })
+    wx.cloud.callFunction({
+      name: 'study',
+      data: {
+        action: 'getSubjectDetail',
+        subjectId
+      },
+      success: res => {
+        wx.hideLoading()
+        if (res.result && res.result.code === 0) {
+          const { lastIndex, answers, favoriteIds, mistakeIds } = res.result.data
+          
+          // 恢复做题进度（跳转到上次做的题目）
+          let targetIndex = lastIndex
+          if (targetIndex >= this.data.totalCount) targetIndex = this.data.totalCount - 1
+          if (targetIndex < 0) targetIndex = 0
+
+          // 更新题目列表中的状态（收藏、是否做过）
+          // 注意：如果题目量特别大，这里需要优化，避免遍历整个列表
+          const newQuestionList = this.data.questionList.map(q => {
+            const answerRecord = answers[q.id] // q.id 是 "1", "2" 这样的字符串
+            const isFav = favoriteIds.includes(String(q.id)) // 确保类型一致
+            
+            // 如果做过，可以预填充（可选，视需求而定。通常刷题模式下，做过的题再次进入可以重做，或者显示上次答案）
+            // 这里暂且只标记收藏状态，不恢复已填答案，以免影响重刷体验。
+            // 但如果是“继续做题”，则应恢复现场。
+            // 鉴于这是“刷题”应用，通常用户希望继续做未做的题，或者查看已做的题。
+            // 简单起见，我们只恢复收藏状态，并跳转到 lastIndex。
+            
+            // 修正：如果这道题正好是当前显示的题，需要更新 currentQuestion 的 isFavorite
+            return {
+              ...q,
+              isFavorite: isFav
+            }
+          })
+
+          this.setData({
+            questionList: newQuestionList,
+            currentIndex: targetIndex,
+            currentQuestion: newQuestionList[targetIndex],
+            isFavorite: newQuestionList[targetIndex].isFavorite || false
+          })
+        }
+      },
+      fail: err => {
+        wx.hideLoading()
+        console.error('同步进度失败', err)
+      }
+    })
   },
 
   loadQuestions(subjectId) {
@@ -174,6 +233,63 @@ Page({
       showAnswer: true,
       isCorrect,
       'currentQuestion.options': options
+    })
+
+    // 提交到云端
+    this.submitToCloud(isCorrect)
+  },
+
+  // 提交答案到云端
+  submitToCloud(isCorrect) {
+    const { currentQuestion, userAnswer, currentIndex } = this.data
+    wx.cloud.callFunction({
+      name: 'study',
+      data: {
+        action: 'submitAnswer',
+        subjectId: this.subjectId,
+        questionId: String(currentQuestion.id),
+        isCorrect,
+        myAnswer: userAnswer,
+        currentIndex
+      },
+      success: res => {
+        console.log('答案提交成功', res)
+      },
+      fail: err => {
+        console.error('答案提交失败', err)
+      }
+    })
+  },
+
+  // 切换收藏
+  toggleFavorite() {
+    const isFavorite = !this.data.isFavorite
+    this.setData({
+      isFavorite
+    })
+    
+    // 更新本地题目列表中的状态
+    const { currentIndex, questionList, currentQuestion } = this.data
+    const newQuestionList = [...questionList]
+    newQuestionList[currentIndex].isFavorite = isFavorite
+    this.setData({
+      questionList: newQuestionList
+    })
+
+    // 提交到云端
+    wx.cloud.callFunction({
+      name: 'study',
+      data: {
+        action: 'toggleFavorite',
+        subjectId: this.subjectId,
+        questionId: String(currentQuestion.id),
+        isFavorite
+      },
+      fail: err => {
+        console.error('收藏操作失败', err)
+        // 回滚状态
+        this.setData({ isFavorite: !isFavorite })
+      }
     })
   },
 

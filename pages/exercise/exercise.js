@@ -57,6 +57,45 @@ Page({
     ]
   },
 
+  onShow() {
+    this.loadProgress()
+  },
+
+  // 加载云端进度
+  loadProgress() {
+    wx.cloud.callFunction({
+      name: 'study',
+      data: {
+        action: 'getSubjectList'
+      },
+      success: res => {
+        if (res.result && res.result.code === 0) {
+          const progressMap = res.result.data
+          
+          const newSubjectList = this.data.subjectList.map(item => {
+            const progress = progressMap[item.id]
+            if (progress) {
+              return {
+                ...item,
+                totalAnswered: progress.totalAnswered || 0,
+                correctCount: progress.correctCount || 0,
+                accuracy: progress.totalAnswered ? Math.round((progress.correctCount / progress.totalAnswered) * 100) : 0
+              }
+            }
+            return item
+          })
+
+          this.setData({
+            subjectList: newSubjectList
+          })
+        }
+      },
+      fail: err => {
+        console.error('获取进度失败', err)
+      }
+    })
+  },
+
   onLoad() {
     // 页面加载时可以从本地缓存或云数据库获取最近练习记录
     this.loadRecentPractice()
