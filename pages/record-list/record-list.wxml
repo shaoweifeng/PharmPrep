@@ -1,0 +1,18 @@
+<!--pages/record-list/record-list.wxml-->
+<view class="container">
+  <block wx:if="{{list.length > 0}}">
+    <view class="record-list">
+      <view class="record-item" wx:for="{{list}}" wx:key="_id" bindtap="onItemClick" data-item="{{item}}">
+        <view class="record-title">{{item.questionTitle || '题目信息加载中...'}}</view>
+        <view class="record-info">
+          <text class="subject-tag">{{item.subjectName}}</text>
+          <text class="record-time">{{item.displayTime}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+  
+  <view wx:else class="empty-state">
+    <text class="empty-text">暂无记录</text>
+  </view>
+</view>

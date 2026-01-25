@@ -19,25 +19,118 @@ Page({
   },
 
   onLoad(options) {
-    const { subjectId, subjectName } = options
+    const { subjectId, subjectName, mode, questionId, myAnswer } = options
     this.subjectId = subjectId // 保存到实例变量
-    
+    this.mode = mode || 'practice' // practice, review
+
     if (subjectName) {
       wx.setNavigationBarTitle({
-        title: subjectName + '练习'
+        title: subjectName + (mode === 'review' ? '详情' : '练习')
       })
     }
     
     // 1. 先加载题目
     this.loadQuestions(subjectId)
 
-    // 2. 再加载云端进度
-    this.loadCloudProgress(subjectId)
+    if (mode === 'review' && questionId) {
+      this.initReviewMode(questionId, myAnswer)
+    } else {
+      // 2. 再加载云端进度
+      this.loadCloudProgress(subjectId)
+    }
+  },
+
+  // 初始化回顾模式
+  initReviewMode(questionId, myAnswerStr) {
+    const { questionList } = this.data
+    // 查找题目索引
+    // 尝试匹配 id (假设是 string 比较)
+    let index = questionList.findIndex(q => String(q.id) === String(questionId))
+    
+    // 如果找不到，尝试匹配 No (如果 id 是 No)
+    // 这里的 id 已经是 item.No || index
+    if (index === -1) {
+      // 兜底：如果是 index
+      index = parseInt(questionId)
+      if (isNaN(index) || index < 0 || index >= questionList.length) {
+        wx.showToast({ title: '题目未找到', icon: 'none' })
+        return
+      }
+    }
+
+    const currentQuestion = questionList[index]
+    let userAnswer = ''
+    
+    // 解析用户答案
+    if (myAnswerStr && myAnswerStr !== 'undefined') {
+      try {
+        userAnswer = JSON.parse(myAnswerStr)
+      } catch (e) {
+        userAnswer = myAnswerStr
+      }
+    }
+
+    // 计算正确性
+    let isCorrect = false
+    if (Array.isArray(currentQuestion.correctAnswer)) {
+      if (Array.isArray(userAnswer) && 
+          userAnswer.length === currentQuestion.correctAnswer.length &&
+          userAnswer.every((val, i) => val === currentQuestion.correctAnswer[i])) { // 假设有序
+        isCorrect = true
+      }
+    } else {
+      isCorrect = userAnswer === currentQuestion.correctAnswer
+    }
+
+    // 标记选项状态
+    const options = this.markOptions(currentQuestion, userAnswer)
+
+    this.setData({
+      currentIndex: index,
+      currentQuestion: {
+        ...currentQuestion,
+        options
+      },
+      userAnswer,
+      isCorrect,
+      showAnswer: true
+    })
+    
+    // 仍然需要加载收藏状态，但不恢复进度
+    this.loadCloudProgress(this.subjectId, false)
+  },
+
+  // 标记选项的正确/错误/选中状态
+  markOptions(question, userAnswer) {
+    return question.options.map(opt => {
+      let isOptCorrect = false
+      if (Array.isArray(question.correctAnswer)) {
+        isOptCorrect = question.correctAnswer.includes(opt.id)
+      } else {
+        isOptCorrect = question.correctAnswer === opt.id
+      }
+      
+      let isSelected = false
+      if (Array.isArray(userAnswer)) {
+        isSelected = userAnswer.includes(opt.id)
+      } else {
+        isSelected = userAnswer === opt.id
+      }
+
+      return {
+        ...opt,
+        isCorrect: isOptCorrect,
+        selected: isSelected
+      }
+    })
   },
 
   // 加载云端进度
-  loadCloudProgress(subjectId) {
-    wx.showLoading({ title: '同步进度中...' })
+  loadCloudProgress(subjectId, restoreProgress = true) {
+    if (restoreProgress) {
+      wx.showLoading({ title: '同步进度中...' })
+    }
+    
     wx.cloud.callFunction({
       name: 'study',
       data: {
@@ -45,44 +138,52 @@ Page({
         subjectId
       },
       success: res => {
-        wx.hideLoading()
+        if (restoreProgress) wx.hideLoading()
         if (res.result && res.result.code === 0) {
           const { lastIndex, answers, favoriteIds, mistakeIds } = res.result.data
           
-          // 恢复做题进度（跳转到上次做的题目）
-          let targetIndex = lastIndex
-          if (targetIndex >= this.data.totalCount) targetIndex = this.data.totalCount - 1
-          if (targetIndex < 0) targetIndex = 0
+          let targetIndex = this.data.currentIndex
+          
+          if (restoreProgress) {
+            // 恢复做题进度（跳转到上次做的题目）
+            targetIndex = lastIndex
+            if (targetIndex >= this.data.totalCount) targetIndex = this.data.totalCount - 1
+            if (targetIndex < 0) targetIndex = 0
+          }
 
           // 更新题目列表中的状态（收藏、是否做过）
-          // 注意：如果题目量特别大，这里需要优化，避免遍历整个列表
           const newQuestionList = this.data.questionList.map(q => {
-            const answerRecord = answers[q.id] // q.id 是 "1", "2" 这样的字符串
-            const isFav = favoriteIds.includes(String(q.id)) // 确保类型一致
-            
-            // 如果做过，可以预填充（可选，视需求而定。通常刷题模式下，做过的题再次进入可以重做，或者显示上次答案）
-            // 这里暂且只标记收藏状态，不恢复已填答案，以免影响重刷体验。
-            // 但如果是“继续做题”，则应恢复现场。
-            // 鉴于这是“刷题”应用，通常用户希望继续做未做的题，或者查看已做的题。
-            // 简单起见，我们只恢复收藏状态，并跳转到 lastIndex。
-            
-            // 修正：如果这道题正好是当前显示的题，需要更新 currentQuestion 的 isFavorite
+            const isFav = favoriteIds.includes(String(q.id))
             return {
               ...q,
               isFavorite: isFav
             }
           })
 
-          this.setData({
+          const updateData = {
             questionList: newQuestionList,
-            currentIndex: targetIndex,
-            currentQuestion: newQuestionList[targetIndex],
             isFavorite: newQuestionList[targetIndex].isFavorite || false
-          })
+          }
+          
+          if (restoreProgress) {
+             updateData.currentIndex = targetIndex
+             updateData.currentQuestion = newQuestionList[targetIndex]
+          } else {
+             // 如果不恢复进度（review模式），只需更新当前题目的收藏状态
+             // 因为 initReviewMode 已经设置了 currentIndex 和 currentQuestion
+             // 但 currentQuestion 是旧对象，需要更新其 isFavorite
+             const currentQ = this.data.currentQuestion
+             updateData.currentQuestion = {
+               ...currentQ,
+               isFavorite: newQuestionList[this.data.currentIndex].isFavorite
+             }
+          }
+
+          this.setData(updateData)
         }
       },
       fail: err => {
-        wx.hideLoading()
+        if (restoreProgress) wx.hideLoading()
         console.error('同步进度失败', err)
       }
     })

@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/exercise/exercise",
     "pages/exercise/exerciseDetail",
+    "pages/record-list/record-list",
     "pages/essay/essay",
     "pages/trueExam/trueExam",
     "pages/knowledge/knowledge",

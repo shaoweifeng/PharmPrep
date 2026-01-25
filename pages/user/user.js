@@ -231,17 +231,16 @@ Page({
   },
   // 加载学习统计数据
   loadStudyStats() {
-    console.log('Starting loadStudyStats...');
+    // console.log('Starting loadStudyStats...');
     wx.cloud.callFunction({
       name: 'study',
       data: {
         action: 'getUserStats'
       },
       success: res => {
-        console.log('loadStudyStats success:', res);
+        // console.log('loadStudyStats success:', res);
         if (res.result && res.result.code === 0) {
           const { totalQuestions, correctQuestions, accuracy, studyDays } = res.result.data
-          console.log('Setting study stats data:', { totalQuestions, correctQuestions, accuracy, studyDays });
           this.setData({
             totalQuestions,
             correctQuestions,
@@ -281,24 +280,22 @@ Page({
 
   // 导航到我的收藏
   navigateToCollection() {
-    wx.showToast({
-      title: '我的收藏功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/record-list/record-list?type=favorite'
     })
   },
 
   // 导航到我的错题
   navigateToWrong() {
-    wx.showToast({
-      title: '我的错题功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/record-list/record-list?type=mistake'
     })
   },
 
   // 导航到学习计划
   navigateToStudyPlan() {
     wx.showToast({
-      title: '学习计划功能开发中',
+      title: '功能开发中',
       icon: 'none'
     })
   },
@@ -306,7 +303,7 @@ Page({
   // 导航到设置
   navigateToSettings() {
     wx.showToast({
-      title: '设置功能开发中',
+      title: '功能开发中',
       icon: 'none'
     })
   },
@@ -314,7 +311,7 @@ Page({
   // 导航到关于我们
   navigateToAbout() {
     wx.showToast({
-      title: '关于我们功能开发中',
+      title: '功能开发中',
       icon: 'none'
     })
   }

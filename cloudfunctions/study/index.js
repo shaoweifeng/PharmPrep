@@ -221,5 +221,22 @@ exports.main = async (event, context) => {
     }
   }
 
+  // 6. 获取记录列表（收藏/错题）
+  if (action === 'getRecordList') {
+    const { type } = event // 'favorite' or 'mistake'
+    const collectionName = type === 'favorite' ? 'favorites' : 'mistakes'
+    
+    // 获取列表，按时间倒序
+    const res = await db.collection(collectionName)
+      .where({ _openid: openid })
+      .orderBy('createTime', 'desc')
+      .get()
+      
+    return {
+      code: 0,
+      data: res.data
+    }
+  }
+
   return { code: -1, msg: 'unknown action' }
 }
