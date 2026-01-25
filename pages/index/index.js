@@ -36,14 +36,16 @@ Page({
         title: '药理学高频考点速记',
         desc: '涵盖考研药理学核心考点，助你快速记忆',
         tag: '知识点速记',
-        imageUrl: '/images/recomands/recomand1.png'
+        imageUrl: '',
+        cloudPath: 'recomand1.png'
       },
       {
         id: 2,
         title: '药剂学大题必背50题',
         desc: '精选药剂学常考大题，附带详细解析',
         tag: '大题带背',
-        imageUrl: '/images/recomands/recomand2.png'
+        imageUrl: '',
+        cloudPath: 'recomand2.png'
       }
     ],
     timer: null
@@ -63,7 +65,7 @@ Page({
     // 2. 准备推荐列表数据
     const recommendList = this.data.recommendList.map(item => {
       // 提取原始文件名
-      const fileName = item.imageUrl.split('/').pop()
+      const fileName = item.cloudPath
       return {
         ...item,
         // 先置空，等待换取链接
