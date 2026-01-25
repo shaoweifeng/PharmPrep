@@ -34,7 +34,9 @@ Page({
     
     // 页面加载时获取用户信息和学习统计数据
     this.loadUserInfo()
-    this.loadStudyStats()
+    if (this.data.hasUserInfo) {
+      this.loadStudyStats()
+    }
   },
 
   // 初始化并加载云端图片

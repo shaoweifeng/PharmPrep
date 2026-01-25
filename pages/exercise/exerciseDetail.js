@@ -524,37 +524,6 @@ Page({
     })
   },
 
-  // 切换到下一题
-  nextQuestion() {
-    if (this.data.currentIndex < this.data.totalCount - 1) {
-      const nextIndex = this.data.currentIndex + 1
-      this.setData({
-        currentIndex: nextIndex,
-        currentQuestion: this.data.questionList[nextIndex],
-        showAnswer: false,
-        userAnswer: this.data.questionList[nextIndex].type === 2 ? [] : '',
-        isCorrect: false
-      })
-    } else {
-      wx.navigateBack()
-    }
-  },
-
-  // 上一题
-  prevQuestion() {
-    if (this.data.currentIndex > 0) {
-      const prevIndex = this.data.currentIndex - 1
-      // 恢复上一题状态（这里简化为重置，若需保留状态需存储在 questionList 中）
-      this.setData({
-        currentIndex: prevIndex,
-        currentQuestion: this.data.questionList[prevIndex],
-        showAnswer: false,
-        userAnswer: this.data.questionList[prevIndex].type === 2 ? [] : '',
-        isCorrect: false
-      })
-    }
-  },
-
   // 显示答题卡
   showCard() {
     wx.showToast({

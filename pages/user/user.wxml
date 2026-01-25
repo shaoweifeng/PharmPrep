@@ -24,19 +24,19 @@
     <view class="section-title">学习统计</view>
     <view class="stats-grid">
       <view class="stat-item">
-        <view class="stat-value">{{totalQuestions}}</view>
+        <view class="stat-value">{{hasUserInfo ? totalQuestions : '--'}}</view>
         <view class="stat-label">总题数</view>
       </view>
       <view class="stat-item">
-        <view class="stat-value">{{correctQuestions}}</view>
+        <view class="stat-value">{{hasUserInfo ? correctQuestions : '--'}}</view>
         <view class="stat-label">答对题数</view>
       </view>
       <view class="stat-item">
-        <view class="stat-value">{{accuracy}}%</view>
+        <view class="stat-value">{{hasUserInfo ? accuracy + '%' : '--'}}</view>
         <view class="stat-label">正确率</view>
       </view>
       <view class="stat-item">
-        <view class="stat-value">{{studyDays}}</view>
+        <view class="stat-value">{{hasUserInfo ? studyDays : '--'}}</view>
         <view class="stat-label">学习天数</view>
       </view>
     </view>

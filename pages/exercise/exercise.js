@@ -70,7 +70,7 @@ Page({
       },
       success: res => {
         if (res.result && res.result.code === 0) {
-          const progressMap = res.result.data
+          const progressMap = res.result.data || {}
           
           const newSubjectList = this.data.subjectList.map(item => {
             const progress = progressMap[item.id]
