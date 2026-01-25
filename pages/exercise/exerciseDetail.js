@@ -276,6 +276,11 @@ Page({
       questionList: newQuestionList
     })
 
+    wx.showToast({
+      title: isFavorite ? '收藏成功' : '取消收藏',
+      icon: 'none'
+    })
+
     // 提交到云端
     wx.cloud.callFunction({
       name: 'study',
@@ -289,6 +294,14 @@ Page({
         console.error('收藏操作失败', err)
         // 回滚状态
         this.setData({ isFavorite: !isFavorite })
+        newQuestionList[currentIndex].isFavorite = !isFavorite
+        this.setData({
+           questionList: newQuestionList
+        })
+        wx.showToast({
+          title: '操作失败',
+          icon: 'none'
+        })
       }
     })
   },
@@ -322,17 +335,6 @@ Page({
         isCorrect: false
       })
     }
-  },
-
-  // 收藏
-  toggleFavorite() {
-    this.setData({
-      isFavorite: !this.data.isFavorite
-    })
-    wx.showToast({
-      title: this.data.isFavorite ? '收藏成功' : '取消收藏',
-      icon: 'none'
-    })
   },
 
   // 显示答题卡

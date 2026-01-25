@@ -108,7 +108,7 @@ Page({
     wx.cloud.getTempFileURL({
       fileList: allFileIDs,
       success: res => {
-        console.info("云图片加载结果:", res.fileList)
+        // console.info("云图片加载结果:", res.fileList)
         
         // 创建一个 Map 方便查找： fileID -> tempFileURL
         const urlMap = new Map()
@@ -229,7 +229,6 @@ Page({
     wx.cloud.getTempFileURL({
       fileList,
       success: res => {
-        console.info("res.fileList", res.fileList)
         // 直接使用 map 生成新列表，简化逻辑
         const newBannerList = (this.data.bannerList || []).map((item, idx) => {
           const fileID = this.bannerFileIDs[idx]
@@ -237,7 +236,6 @@ Page({
           const fileItem = res.fileList.find(i => i.fileID === fileID)
           
           if (fileItem && fileItem.status === 0) {
-            console.info(`图片加载成功: ${fileID}`)
             return { ...item, imageUrl: fileItem.tempFileURL }
           } else {
             console.warn(`图片加载失败或状态异常: ${fileID}`, fileItem)
@@ -246,7 +244,6 @@ Page({
         })
         
         this.setData({ bannerList: newBannerList })
-        console.info("更新后的 bannerList:", newBannerList)
       },
       fail: err => {
         console.error('轮播图云图片加载失败', err)
