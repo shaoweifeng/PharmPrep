@@ -78,7 +78,17 @@ Page({
     }
     // 页面显示时刷新数据
     this.loadUserInfo()
-    this.loadStudyStats()
+    if (this.data.hasUserInfo) {
+      this.loadStudyStats()
+    } else {
+      // 未登录时重置数据
+      this.setData({
+        totalQuestions: 0,
+        correctQuestions: 0,
+        accuracy: 0,
+        studyDays: 0
+      })
+    }
   },
 
   // 加载用户信息
@@ -179,20 +189,13 @@ Page({
           this.setData({
             userInfo,
             hasUserInfo: true,
-            showLoginModal: false,
-            // 同时更新统计数据（如果云端返回了）
-            totalQuestions: userInfo.totalQuestions || 0,
-            correctQuestions: userInfo.correctQuestions || 0,
-            studyDays: userInfo.studyDays || 0
+            showLoginModal: false
           })
           
-          // 更新正确率
-          if (this.data.totalQuestions > 0) {
-            const accuracy = Math.round((this.data.correctQuestions / this.data.totalQuestions) * 100)
-            this.setData({ accuracy })
-          }
-
           wx.setStorageSync('userInfo', userInfo)
+          
+          // 登录成功后加载统计数据
+          this.loadStudyStats()
           
           wx.showToast({
             title: '同步成功',
@@ -226,6 +229,35 @@ Page({
       tempNickName: hasUserInfo ? userInfo.nickName : ''
     })
   },
+  // 加载学习统计数据
+  loadStudyStats() {
+    console.log('Starting loadStudyStats...');
+    wx.cloud.callFunction({
+      name: 'study',
+      data: {
+        action: 'getUserStats'
+      },
+      success: res => {
+        console.log('loadStudyStats success:', res);
+        if (res.result && res.result.code === 0) {
+          const { totalQuestions, correctQuestions, accuracy, studyDays } = res.result.data
+          console.log('Setting study stats data:', { totalQuestions, correctQuestions, accuracy, studyDays });
+          this.setData({
+            totalQuestions,
+            correctQuestions,
+            accuracy,
+            studyDays
+          })
+        } else {
+          console.warn('loadStudyStats returned non-zero code:', res.result);
+        }
+      },
+      fail: err => {
+        console.error('获取学习统计失败', err)
+      }
+    })
+  },
+
   // 退出登录
   logout() {
     wx.showModal({
@@ -233,37 +265,17 @@ Page({
       content: '确定要退出登录吗？',
       success: (res) => {
         if (res.confirm) {
-          // 清除本地存储
           wx.removeStorageSync('userInfo')
-          
-          // 更新页面状态
           this.setData({
             userInfo: {},
-            hasUserInfo: false
-          })
-          
-          wx.showToast({
-            title: '已退出登录',
-            icon: 'none'
+            hasUserInfo: false,
+            totalQuestions: 0,
+            correctQuestions: 0,
+            accuracy: 0,
+            studyDays: 0
           })
         }
       }
-    })
-  },
-
-  loadStudyStats() {
-    // 这里可以从本地缓存或云数据库获取学习统计数据
-    // 暂时使用模拟数据
-    const totalQuestions = wx.getStorageSync('totalQuestions') || 0
-    const correctQuestions = wx.getStorageSync('correctQuestions') || 0
-    const studyDays = wx.getStorageSync('studyDays') || 0
-    const accuracy = totalQuestions > 0 ? Math.round((correctQuestions / totalQuestions) * 100) : 0
-
-    this.setData({
-      totalQuestions,
-      correctQuestions,
-      accuracy,
-      studyDays
     })
   },
 

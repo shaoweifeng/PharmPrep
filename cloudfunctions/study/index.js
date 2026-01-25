@@ -1,6 +1,5 @@
 // 云函数入口文件
 const cloud = require('wx-server-sdk')
-const { EVertexBatchOperator } = require('XrFrame')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV }) // 使用当前云环境
 
@@ -171,6 +170,55 @@ exports.main = async (event, context) => {
     }
     
     return { code: 0, msg: 'success' }
+  }
+
+  // 5. 获取个人中心统计数据
+  if (action === 'getUserStats') {
+    // 聚合查询所有科目的进度
+    const progressRes = await db.collection('study_progress').where({ _openid: openid }).get()
+    
+    let totalQuestions = 0
+    let correctQuestions = 0
+    let studyDaysSet = new Set() // 使用 Set 统计学习天数
+
+    progressRes.data.forEach(item => {
+      totalQuestions += (item.totalAnswered || 0)
+      correctQuestions += (item.correctCount || 0)
+      
+      // 统计 createTime
+      if (item.createTime) {
+        const dateStr = new Date(item.createTime).toDateString()
+        studyDaysSet.add(dateStr)
+      }
+      // 统计 updateTime
+      if (item.updateTime) {
+         const dateStr = new Date(item.updateTime).toDateString()
+         studyDaysSet.add(dateStr)
+      }
+      
+      // 遍历 answers 里的时间 (如果数据量大，这样可能性能不好，简化版只看 updateTime/createTime)
+      // 为了更精确，可以遍历 answers
+      if (item.answers) {
+        Object.values(item.answers).forEach(ans => {
+           if (ans.time) {
+             const d = new Date(ans.time).toDateString()
+             studyDaysSet.add(d)
+           }
+        })
+      }
+    })
+
+    const accuracy = totalQuestions > 0 ? Math.round((correctQuestions / totalQuestions) * 100) : 0
+
+    return {
+      code: 0,
+      data: {
+        totalQuestions,
+        correctQuestions,
+        accuracy,
+        studyDays: studyDaysSet.size
+      }
+    }
   }
 
   return { code: -1, msg: 'unknown action' }
