@@ -106,16 +106,22 @@ Page({
 
   onItemClick(e) {
     const item = e.currentTarget.dataset.item
-    const { subjectId, questionId, myAnswer } = item
+    const { subjectId, questionId } = item
+    
+    // 获取当前列表中的所有题目 ID
+    const idList = this.data.list.map(i => i.questionId)
+    // 找到当前题目在列表中的索引
+    const currentIndex = idList.indexOf(questionId)
     
     // 构建跳转 URL
-    let url = `/pages/exercise/exerciseDetail?subjectId=${subjectId}&questionId=${questionId}&mode=review`
+    // 将整个列表的 ID 序列传过去，太长可能会超出 URL 长度限制
+    // 更好的方式是只传当前索引和 type，让详情页自己去云端拉取或者传参
+    // 但详情页复用的是 exerciseDetail，它默认是加载整个题库。
+    // 方案：将 idList 存入全局变量或 storage，详情页读取。
     
-    // 如果是错题，传递用户的错误答案以便回显
-    if (this.data.type === 'mistake' && myAnswer) {
-      // myAnswer 可能是数组（多选），需要序列化
-      url += `&myAnswer=${JSON.stringify(myAnswer)}`
-    }
+    wx.setStorageSync('reviewList', this.data.list)
+    
+    let url = `/pages/exercise/exerciseDetail?subjectId=${subjectId}&questionId=${questionId}&mode=review&listIndex=${currentIndex}`
     
     wx.navigateTo({ url })
   }
