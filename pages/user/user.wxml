@@ -3,7 +3,7 @@
   <!-- 用户信息卡片 -->
   <view class="card-container user-info-card">
     <view class="user-avatar" bindtap="onTapUserInfo">
-      <image src="{{hasUserInfo && userInfo.avatarUrl ? userInfo.avatarUrl : '/images/avatar/default.png'}}" mode="aspectFit"></image>
+      <image src="{{hasUserInfo && userInfo.avatarUrl ? userInfo.avatarUrl : staticImages.defaultAvatar}}" mode="aspectFit"></image>
     </view>
     <view class="user-detail" bindtap="onTapUserInfo">
       <view class="user-name">{{hasUserInfo && userInfo.nickName ? userInfo.nickName : '点击登陆'}}</view>
@@ -12,7 +12,8 @@
     <view class="user-action-area">
       <view class="action-btn" bindtap="editUserInfo">
         <text>编辑资料</text>
-      </view> 
+        <image src="{{staticImages.editIcon}}" mode="aspectFit" class="action-icon"></image>
+      </view>
       <view class="action-btn" bindtap="logout" wx:if="{{hasUserInfo}}">
         <text>退出登录</text>
       </view>
@@ -102,7 +103,7 @@
       <view class="modal-header">完善个人信息</view>
       <view class="modal-body">
         <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
-          <image class="avatar-preview" src="{{tempAvatarUrl || '/images/avatar/default.png'}}"></image>
+          <image class="avatar-preview" src="{{tempAvatarUrl || staticImages.defaultAvatar}}"></image>
         </button>
         <view class="avatar-tip">点击修改头像</view>
         <view class="input-group">

@@ -4,6 +4,15 @@ Page({
     countdown: {
       days: 0
     },
+    // 功能区图标
+    iconList: {
+      exercise: '',
+      essay: '',
+      trueExam: '',
+      knowledge: '',
+      anki: '',
+      explaination: ''
+    },
     bannerList: [
       {
         id: 1,
@@ -41,18 +50,124 @@ Page({
   },
 
   onLoad() {
+    const app = getApp()
+    const cloudBase = app.globalData.cloudImageBase
+
     // 初始化倒计时
     this.initCountdown()
-    // 仅针对轮播图：使用 link 作为云文件ID加载临时链接
-    this.bannerFileIDs = (this.data.bannerList || []).map(item => String(item.link || '').trim())
+
+    // 1. 准备轮播图数据
     // 首帧不渲染 cloud://，先清空 imageUrl，待获取临时链接后再填充
-    this.setData({
-      bannerList: (this.data.bannerList || []).map(item => ({ ...item, imageUrl: '' }))
+    const bannerList = (this.data.bannerList || []).map(item => ({ ...item, imageUrl: '' }))
+
+    // 2. 准备推荐列表数据
+    const recommendList = this.data.recommendList.map(item => {
+      // 提取原始文件名
+      const fileName = item.imageUrl.split('/').pop()
+      return {
+        ...item,
+        // 先置空，等待换取链接
+        imageUrl: '',
+        // 暂存云文件ID
+        cloudFileID: `${cloudBase}/recomands/${fileName}` 
+      }
     })
-    this.loadBannerImages()
+
+    // 3. 准备功能区图标数据
+    const iconList = {
+      exercise: `${cloudBase}/icons/exercise.png`,
+      essay: `${cloudBase}/icons/essay.png`,
+      trueExam: `${cloudBase}/icons/true-exam.png`,
+      knowledge: `${cloudBase}/icons/knowledge.png`,
+      anki: `${cloudBase}/icons/anki.png`,
+      explaination: `${cloudBase}/icons/explaination.png`
+    }
+
+    this.setData({
+      bannerList,
+      recommendList,
+      iconList // 先把 cloudFileID 存入，虽然 wxml 绑定的是 iconList.xxx，但稍后会替换为 HTTPS URL
+    })
+
+    // 统一加载所有云图片
+    this.loadAllCloudImages()
+  },
+
+  // 统一加载所有云资源图片
+  loadAllCloudImages() {
+    // 收集所有需要换取链接的 fileID
+    const bannerIDs = (this.data.bannerList || []).map(item => String(item.link || '').trim())
+    const recommendIDs = (this.data.recommendList || []).map(item => item.cloudFileID)
+    const iconIDs = Object.values(this.data.iconList)
+    
+    // 合并去重
+    const allFileIDs = [...new Set([...bannerIDs, ...recommendIDs, ...iconIDs])].filter(id => id.startsWith('cloud://'))
+    
+    if (allFileIDs.length === 0) return
+
+    wx.cloud.getTempFileURL({
+      fileList: allFileIDs,
+      success: res => {
+        console.info("云图片加载结果:", res.fileList)
+        
+        // 创建一个 Map 方便查找： fileID -> tempFileURL
+        const urlMap = new Map()
+        res.fileList.forEach(item => {
+          if (item.status === 0) {
+            urlMap.set(item.fileID, item.tempFileURL)
+          } else {
+            console.warn(`图片加载失败: ${item.fileID}`)
+          }
+        })
+
+        // 1. 更新 Banner
+        const newBannerList = this.data.bannerList.map(item => {
+          const link = String(item.link || '').trim()
+          return {
+            ...item,
+            imageUrl: urlMap.get(link) || ''
+          }
+        })
+
+        // 2. 更新 Recommend
+        const newRecommendList = this.data.recommendList.map(item => {
+          return {
+            ...item,
+            imageUrl: urlMap.get(item.cloudFileID) || ''
+          }
+        })
+
+        // 3. 更新 Icons
+        const newIconList = {}
+        Object.keys(this.data.iconList).forEach(key => {
+          const fileID = this.data.iconList[key]
+          // 如果当前 value 已经是 http 开头（虽然刚初始化不太可能），或者 map 里有值
+          if (fileID.startsWith('http')) {
+             newIconList[key] = fileID
+          } else {
+             newIconList[key] = urlMap.get(fileID) || ''
+          }
+        })
+
+        this.setData({
+          bannerList: newBannerList,
+          recommendList: newRecommendList,
+          iconList: newIconList
+        })
+      },
+      fail: err => {
+        console.error('云图片加载失败', err)
+      }
+    })
   },
 
   onShow() {
+    // 更新自定义 TabBar 选中态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({
+        selected: 0
+      })
+    }
     // 页面显示时启动倒计时
     this.startCountdown()
   },

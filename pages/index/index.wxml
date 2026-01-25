@@ -25,37 +25,37 @@
     <view class="grid">
       <view class="grid-item" bindtap="navigateToExercise">
         <view class="grid-icon">
-          <image src="/images/icons/exercise.png" mode="aspectFit"></image>
+          <image src="{{iconList.exercise}}" mode="aspectFit"></image>
         </view>
         <view class="grid-text">科目选择</view>
       </view>
       <view class="grid-item" bindtap="navigateToEssay">
         <view class="grid-icon">
-          <image src="/images/icons/essay.png" mode="aspectFit"></image>
+          <image src="{{iconList.essay}}" mode="aspectFit"></image>
         </view>
         <view class="grid-text">习题大题带背</view>
       </view>
       <view class="grid-item" bindtap="navigateToTrueExam">
         <view class="grid-icon">
-          <image src="/images/icons/true-exam.png" mode="aspectFit"></image>
+          <image src="{{iconList.trueExam}}" mode="aspectFit"></image>
         </view>
         <view class="grid-text">高校真题合集</view>
       </view>
       <view class="grid-item" bindtap="navigateToKnowledge">
         <view class="grid-icon">
-          <image src="/images/icons/knowledge.png" mode="aspectFit"></image>
+          <image src="{{iconList.knowledge}}" mode="aspectFit"></image>
         </view>
         <view class="grid-text">知识点速记</view>
       </view>
       <view class="grid-item" bindtap="navigateToAnki">
         <view class="grid-icon">
-          <image src="/images/icons/anki.png" mode="aspectFit"></image>
+          <image src="{{iconList.anki}}" mode="aspectFit"></image>
         </view>
         <view class="grid-text">Anki卡片</view>
       </view>
       <view class="grid-item" bindtap="navigateToTerm">
         <view class="grid-icon">
-          <image src="/images/icons/term.png" mode="aspectFit"></image>
+          <image src="{{iconList.explaination}}" mode="aspectFit"></image>
         </view>
         <view class="grid-text">名词解释带背</view>
       </view>

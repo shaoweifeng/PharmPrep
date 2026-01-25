@@ -21,5 +21,6 @@ App({
     userInfo: null,
     systemInfo: null,
     examDate: '2026-12-31', // 考研日期，可根据实际情况修改
+    cloudImageBase: 'cloud://pharm-prep-2g3a9oq5b57fa359.7068/images' // 云存储图片根路径
   }
 })

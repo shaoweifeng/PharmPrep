@@ -10,10 +10,21 @@ Page({
     studyDays: 0,
     showLoginModal: false,
     tempAvatarUrl: '',
-    tempNickName: ''
+    tempNickName: '',
+    // 静态资源
+    staticImages: {
+      defaultAvatar: '',
+      editIcon: ''
+    }
   },
 
   onLoad() {
+    const app = getApp()
+    const cloudBase = app.globalData.cloudImageBase
+
+    // 初始化云端静态资源
+    this.initCloudImages(cloudBase)
+
     // 检查是否支持 getUserProfile
     if (wx.getUserProfile) {
       this.setData({
@@ -26,7 +37,45 @@ Page({
     this.loadStudyStats()
   },
 
+  // 初始化并加载云端图片
+  initCloudImages(cloudBase) {
+    const staticImages = {
+      defaultAvatar: `${cloudBase}/avatar/default.png`,
+      editIcon: `${cloudBase}/icons/edit.png`
+    }
+    
+    // 先存入 cloudFileID
+    this.setData({ staticImages })
+    
+    // 换取临时链接
+    const fileList = Object.values(staticImages)
+    wx.cloud.getTempFileURL({
+      fileList,
+      success: res => {
+        const urlMap = new Map()
+        res.fileList.forEach(item => {
+          if (item.status === 0) {
+            urlMap.set(item.fileID, item.tempFileURL)
+          }
+        })
+        
+        this.setData({
+          staticImages: {
+            defaultAvatar: urlMap.get(staticImages.defaultAvatar) || '',
+            editIcon: urlMap.get(staticImages.editIcon) || ''
+          }
+        })
+      }
+    })
+  },
+
   onShow() {
+    // 更新自定义 TabBar 选中态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({
+        selected: 1
+      })
+    }
     // 页面显示时刷新数据
     this.loadUserInfo()
     this.loadStudyStats()
