@@ -116,8 +116,9 @@ Page({
     const subjectId = e.currentTarget.dataset.subjectId
     const subject = this.data.subjectList.find(s => s.id === subjectId)
     
+    // 跳转到教材和章节选择页面
     wx.navigateTo({
-      url: `/pages/exercise/exerciseDetail?subjectId=${subjectId}&subjectName=${subject.name}`
+      url: `/pages/chapter-select/chapter-select?subjectId=${subjectId}&subjectName=${subject.name}`
     })
   },
 

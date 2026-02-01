@@ -1,7 +1,7 @@
 <!-- pages/essay/essay.wxml -->
 <view class="page-container">
   <view class="card-container">
-    <view class="section-title">习题大题带背</view>
+    <view class="section-title">大题带背</view>
     <view class="subject-tabs">
       <view class="tab-item {{activeTab === item.id ? 'active' : ''}}" wx:for="{{subjectList}}" wx:key="id" bindtap="switchTab" data-tab-id="{{item.id}}">
         {{item.name}}

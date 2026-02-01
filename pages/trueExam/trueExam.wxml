@@ -1,7 +1,7 @@
 <!-- pages/trueExam/trueExam.wxml -->
 <view class="page-container">
   <view class="card-container">
-    <view class="section-title">高校真题合集</view>
+    <view class="section-title">高校真题</view>
     <view class="exam-filter">
       <view class="filter-section">
         <view class="filter-label">年份</view>

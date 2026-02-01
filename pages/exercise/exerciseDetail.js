@@ -1,5 +1,4 @@
 // pages/exercise/exerciseDetail.js
-const pharmacologyData = require('../../data/questions/pharmacology.js')
 
 Page({
   data: {
@@ -20,74 +19,56 @@ Page({
   },
 
   onLoad(options) {
-    const { subjectId, subjectName, mode, listIndex, type } = options
+    const { subjectId, subjectName, mode, listIndex, type, textbook, chapter, startIndex } = options
     this.subjectId = subjectId // 保存到实例变量
     this.mode = mode || 'practice' // practice, review
+    this.textbook = textbook || ''
+    this.chapter = chapter || ''
+    this.explicitStartIndex = startIndex ? parseInt(startIndex) : null
+    
     this.setData({ reviewType: type || '' })
 
     if (subjectName) {
+      this.subjectName = subjectName
       wx.setNavigationBarTitle({
         title: subjectName + (mode === 'review' ? '详情' : '练习')
       })
     }
     
-    // 1. 先加载题目
     if (this.mode === 'review') {
       // 回顾模式下，题目列表来自于上个页面的传递
       const reviewList = wx.getStorageSync('reviewList') || []
       this.reviewList = reviewList // 保存原始记录列表
-      
-      // 将 reviewList 转换为题目格式
-      // 注意：reviewList 里的 item 包含 subjectId, questionId, myAnswer 等
-      // 我们需要根据这些信息去题库里找完整的题目信息
-      // 但这里有个问题：reviewList 可能包含不同科目的题目（如果支持全科目收藏），但目前详情页是按科目进的
-      // 假设 reviewList 里的题目都是当前 subjectId 的，或者是混合的？
-      // 这里的 subjectId 参数可能只是为了标识当前上下文。
-      // 如果 record-list 支持多科目混合，那详情页也得支持动态切换 subjectId（这比较复杂，因为 loadQuestions 依赖 subjectId）
-      // 简化处理：假设 reviewList 里的题目都能在本地题库找到。
-      
       this.loadReviewQuestions(reviewList, listIndex)
+      // 回顾模式下，由于 loadReviewQuestions 是异步的，
+      // loadCloudProgress 可能会在 questionList 为空时执行，导致 undefined 错误
+      // 所以应该在 loadReviewQuestions 获取到题目后，再调用 loadCloudProgress
+      // 这里先移除调用，改为在 loadReviewQuestions 成功后调用
     } else {
+      // 练习模式：先加载题目，题目加载成功后再同步进度
+      // 因为 loadQuestions 是异步的，如果直接并行调用 loadCloudProgress
+      // 此时 questionList 可能还为空，导致 newQuestionList[targetIndex] 报错
+      // 解决方案：让 loadQuestions 返回 Promise 或者在 success 回调中调用 loadCloudProgress
       this.loadQuestions(subjectId)
-      // 2. 再加载云端进度
-      this.loadCloudProgress(subjectId)
     }
   },
 
-  // 加载回顾模式的题目列表
-  loadReviewQuestions(reviewList, initialListIndex) {
-    // 引入题库 (目前只有药理学，后续需扩展)
-    // 这里的 id 映射逻辑需要和 record-list 保持一致
-    const pharmacologyData = require('../../data/questions/pharmacology.js')
-    const subjectMap = {
-      '1': { data: pharmacologyData.prompt1_result }
-    }
-
-    const questionList = reviewList.map(item => {
-      const { subjectId, questionId, myAnswer } = item
-      const subject = subjectMap[subjectId]
-      let questionData = null
-
-      if (subject && subject.data) {
-        // 查找逻辑同 record-list
-        // 修复：直接使用 find 查找，避免直接使用索引导致的错位问题（因为 No 通常从 1 开始，而索引从 0 开始）
-        questionData = subject.data.find((q, idx) => String(q.No || idx) === String(questionId))
-      }
-
-      if (!questionData) return null
-
-      // 格式化为详情页需要的结构
+  // 处理云端题目数据格式
+  processCloudQuestions(rawQuestions) {
+    return rawQuestions.map((item) => {
       let type = 1
-      if (questionData.type === 'multiple_choice') type = 2
-      if (questionData.type === 'true_false') type = 3
+      if (item.type === 'multiple_choice') type = 2
+      if (item.type === 'true_false') type = 3
 
       const options = []
-      const keys = Object.keys(questionData.choice).sort()
+      // 兼容 options 和 choice 字段，防止 undefined 报错
+      const rawOptions = item.options || item.choice || {}
+      const keys = Object.keys(rawOptions).sort()
       keys.forEach(key => {
         options.push({
           id: key,
           label: key,
-          content: questionData.choice[key],
+          content: rawOptions[key],
           selected: false
         })
       })
@@ -99,74 +80,109 @@ Page({
         })
       }
 
-      // 回显用户答案和正确答案
-      let userAnswer = ''
-      if (myAnswer) userAnswer = myAnswer // myAnswer 在数据库里已经是存好的格式（string or array）
-      
-      // 计算是否正确 (复用逻辑)
-      let isCorrect = false
-      if (Array.isArray(questionData.answer)) {
-        if (Array.isArray(userAnswer) && 
-            userAnswer.length === questionData.answer.length &&
-            userAnswer.every((val, i) => val === questionData.answer[i])) {
-          isCorrect = true
-        }
-      } else {
-        isCorrect = userAnswer === questionData.answer
-      }
-
-      // 标记选项
-      const markedOptions = options.map(opt => {
-        let isOptCorrect = false
-        if (Array.isArray(questionData.answer)) {
-          isOptCorrect = questionData.answer.includes(opt.id)
-        } else {
-          isOptCorrect = questionData.answer === opt.id
-        }
-        
-        let isSelected = false
-        if (Array.isArray(userAnswer)) {
-          isSelected = userAnswer.includes(opt.id)
-        } else {
-          isSelected = userAnswer === opt.id
-        }
-
-        return {
-          ...opt,
-          isCorrect: isOptCorrect,
-          selected: isSelected
-        }
-      })
-
       return {
-        id: questionData.No || questionId, // 保持 ID 一致性
-        type,
-        title: questionData.question,
-        options: markedOptions,
-        correctAnswer: questionData.answer,
-        analysis: questionData.explanation,
-        // 附加信息
-        myAnswer: userAnswer,
-        userIsCorrect: isCorrect,
-        recordId: item._id // 记录在云端的 ID，用于删除等操作
+        id: item._id,
+        type: type,
+        title: item.question,
+        options: options,
+        correctAnswer: item.answer, // 可能是字符串或数组
+        analysis: item.explanation
       }
-    }).filter(q => q !== null)
-
-    const currentIndex = parseInt(initialListIndex) || 0
-
-    this.setData({
-      questionList,
-      totalCount: questionList.length,
-      currentIndex,
-      currentQuestion: questionList[currentIndex],
-      showAnswer: true, // 回顾模式默认显示答案
-      userAnswer: questionList[currentIndex].myAnswer,
-      isCorrect: questionList[currentIndex].userIsCorrect,
-      isFavorite: true // 收藏列表进来的默认是收藏，错题列表进来的可能不一定？暂且不操作
     })
-    
-    // 加载当前题目的收藏状态（因为错题本里的题不一定收藏了）
-    this.checkFavoriteStatus(questionList[currentIndex].id)
+  },
+
+  // 加载回顾模式的题目列表
+  loadReviewQuestions(reviewList, initialListIndex) {
+    const ids = [...new Set(reviewList.map(item => item.questionId))].filter(id => id)
+    if (ids.length === 0) return
+
+    wx.showLoading({ title: '加载题目...' })
+    wx.cloud.callFunction({
+      name: 'get_questions',
+      data: { ids },
+      success: res => {
+        wx.hideLoading()
+        if (res.result && res.result.code === 0) {
+          const cloudQuestions = res.result.data
+          const questionList = reviewList.map(item => {
+            const qData = cloudQuestions.find(q => q._id === item.questionId)
+            if (!qData) return null
+
+            // 格式化为详情页需要的结构
+            const formatted = this.processCloudQuestions([qData])[0]
+
+            // 回显用户答案和正确答案
+            let userAnswer = item.myAnswer || ''
+            
+            // 计算是否正确
+            let isCorrect = false
+            if (Array.isArray(formatted.correctAnswer)) {
+              if (Array.isArray(userAnswer) && 
+                  userAnswer.length === formatted.correctAnswer.length &&
+                  userAnswer.every((val, i) => val === formatted.correctAnswer[i])) {
+                isCorrect = true
+              }
+            } else {
+              isCorrect = userAnswer === formatted.correctAnswer
+            }
+
+            // 标记选项
+            const markedOptions = formatted.options.map(opt => {
+              let isOptCorrect = false
+              if (Array.isArray(formatted.correctAnswer)) {
+                isOptCorrect = formatted.correctAnswer.includes(opt.id)
+              } else {
+                isOptCorrect = formatted.correctAnswer === opt.id
+              }
+              
+              let isSelected = false
+              if (Array.isArray(userAnswer)) {
+                isSelected = userAnswer.includes(opt.id)
+              } else {
+                isSelected = userAnswer === opt.id
+              }
+
+              return {
+                ...opt,
+                isCorrect: isOptCorrect,
+                selected: isSelected
+              }
+            })
+
+            return {
+              ...formatted,
+              options: markedOptions,
+              myAnswer: userAnswer,
+              userIsCorrect: isCorrect,
+              recordId: item._id
+            }
+          }).filter(q => q !== null)
+
+          const currentIndex = parseInt(initialListIndex) || 0
+          if (questionList.length > 0) {
+            this.setData({
+              questionList,
+              totalCount: questionList.length,
+              currentIndex,
+              currentQuestion: questionList[currentIndex],
+              showAnswer: true, // 回顾模式默认显示答案
+              userAnswer: questionList[currentIndex].myAnswer,
+              isCorrect: questionList[currentIndex].userIsCorrect,
+              isFavorite: true 
+            })
+            // 加载当前题目的收藏状态
+            this.loadCloudProgress(this.subjectId, false)
+          } else {
+            wx.showToast({ title: '题目加载失败', icon: 'none' })
+          }
+        }
+      },
+      fail: err => {
+        wx.hideLoading()
+        console.error('加载题目失败', err)
+        wx.showToast({ title: '网络错误', icon: 'none' })
+      }
+    })
   },
 
   // 检查特定题目的收藏状态
@@ -276,22 +292,25 @@ Page({
           })
 
           const updateData = {
-            questionList: newQuestionList,
-            isFavorite: newQuestionList[targetIndex].isFavorite || false
+            questionList: newQuestionList
           }
           
-          if (restoreProgress) {
-             updateData.currentIndex = targetIndex
-             updateData.currentQuestion = newQuestionList[targetIndex]
-          } else {
-             // 如果不恢复进度（review模式），只需更新当前题目的收藏状态
-             // 因为 initReviewMode 已经设置了 currentIndex 和 currentQuestion
-             // 但 currentQuestion 是旧对象，需要更新其 isFavorite
-             const currentQ = this.data.currentQuestion
-             updateData.currentQuestion = {
-               ...currentQ,
-               isFavorite: newQuestionList[this.data.currentIndex].isFavorite
-             }
+          if (newQuestionList.length > 0 && targetIndex >= 0 && targetIndex < newQuestionList.length) {
+              updateData.isFavorite = newQuestionList[targetIndex].isFavorite || false
+              
+              if (restoreProgress) {
+                 updateData.currentIndex = targetIndex
+                 updateData.currentQuestion = newQuestionList[targetIndex]
+              } else {
+                 // 如果不恢复进度（review模式），只需更新当前题目的收藏状态
+                 const currentQ = this.data.currentQuestion
+                 if (currentQ) {
+                     updateData.currentQuestion = {
+                       ...currentQ,
+                       isFavorite: newQuestionList[this.data.currentIndex]?.isFavorite || false
+                     }
+                 }
+              }
           }
 
           this.setData(updateData)
@@ -305,65 +324,58 @@ Page({
   },
 
   loadQuestions(subjectId) {
-    // 根据 subjectId 加载对应题库（假设药理学 ID 为 1）
-    if (subjectId == '1') {
-      const rawQuestions = (pharmacologyData && pharmacologyData.prompt1_result) ? pharmacologyData.prompt1_result : []
-      // 转换数据格式
-      const questionList = rawQuestions.map((item, index) => {
-        let type = 1
-        if (item.type === 'multiple_choice') type = 2
-        if (item.type === 'true_false') type = 3
-  
-        // 处理选项
-        const options = []
-        // 按照 A, B, C, D, E ... 排序
-        const keys = Object.keys(item.choice).sort()
-        keys.forEach(key => {
-          options.push({
-            id: key,
-            label: key, // 对于判断题，这里可能是 "True"/"False"
-            content: item.choice[key],
-            selected: false
-          })
-        })
-  
-        // 处理判断题的 label 显示
-      if (type === 3) {
-        options.forEach(opt => {
-          if (opt.id === 'True') {
-            opt.label = '正确'
-            opt.content = ''
-          }
-          if (opt.id === 'False') {
-            opt.label = '错误'
-            opt.content = ''
-          }
-        })
-      }
-  
-        return {
-          id: item.No || index,
-          type: type,
-          title: item.question,
-          options: options,
-          correctAnswer: item.answer, // 可能是字符串或数组
-          analysis: item.explanation
-        }
-      })
-  
-      if (questionList.length > 0) {
-        this.setData({
-          questionList,
-          totalCount: questionList.length,
-          currentQuestion: questionList[0]
-        })
-      }
-    } else {
-      wx.showToast({
-        title: '该科目题库暂未上线',
-        icon: 'none'
-      })
+    wx.showLoading({ title: '加载题目中...' })
+    const subject = this.subjectName || (subjectId === '1' ? '药理学' : '')
+    
+    if (!subject) {
+      wx.hideLoading()
+      wx.showToast({ title: '未知科目', icon: 'none' })
+      return
     }
+
+    const data = { subject }
+    if (this.textbook) data.textbook = this.textbook
+    if (this.chapter) data.chapter = this.chapter
+
+    wx.cloud.callFunction({
+      name: 'get_questions',
+      data: data,
+      success: res => {
+        wx.hideLoading()
+        if (res.result && res.result.code === 0) {
+          const rawQuestions = res.result.data
+          const questionList = this.processCloudQuestions(rawQuestions)
+          
+          if (questionList.length > 0) {
+            // 如果指定了起始题目，使用指定的索引
+            let initialIndex = 0
+            if (this.explicitStartIndex !== null && this.explicitStartIndex >= 0 && this.explicitStartIndex < questionList.length) {
+                initialIndex = this.explicitStartIndex
+            }
+
+            this.setData({
+              questionList,
+              totalCount: questionList.length,
+              currentQuestion: questionList[initialIndex],
+              currentIndex: initialIndex
+            })
+            // 题目加载完成后，再同步云端进度
+            // 如果有明确的起始题目，则不恢复进度（restoreProgress = false）
+            const shouldRestore = this.explicitStartIndex === null
+            this.loadCloudProgress(subjectId, shouldRestore)
+          } else {
+             wx.showToast({ title: '该科目暂无题目', icon: 'none' })
+          }
+        } else {
+            wx.showToast({ title: '加载失败', icon: 'none' })
+        }
+      },
+      fail: err => {
+        wx.hideLoading()
+        console.error(err)
+        wx.showToast({ title: '网络错误', icon: 'none' })
+      }
+    })
   },
 
   // 选择选项

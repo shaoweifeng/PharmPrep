@@ -2,6 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/exercise/exercise",
+    "pages/chapter-select/chapter-select",
     "pages/exercise/exerciseDetail",
     "pages/record-list/record-list",
     "pages/essay/essay",

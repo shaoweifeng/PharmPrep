@@ -297,14 +297,14 @@ Page({
     })
   },
 
-  // 导航到习题大题带背
+  // 导航到大题带背
   navigateToEssay() {
     wx.navigateTo({
       url: '/pages/essay/essay'
     })
   },
 
-  // 导航到高校真题合集
+  // 导航到高校真题
   navigateToTrueExam() {
     wx.navigateTo({
       url: '/pages/trueExam/trueExam'
@@ -325,7 +325,7 @@ Page({
     })
   },
 
-  // 导航到名词解释带背
+  // 导航到名词解释
   navigateToTerm() {
     wx.navigateTo({
       url: '/pages/term/term'

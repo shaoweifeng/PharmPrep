@@ -1,7 +1,7 @@
 <!-- pages/exercise/exercise.wxml -->
 <view class="page-container">
   <view class="card-container">
-    <view class="section-title">科目选择</view>
+    <view class="section-title">选择题速刷</view>
     <view class="subject-list">
       <view class="subject-item" wx:for="{{subjectList}}" wx:key="id" bindtap="selectSubject" data-subject-id="{{item.id}}">
         <view class="subject-icon">{{item.icon}}</view>

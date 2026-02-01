@@ -95,6 +95,19 @@
     </view>
   </view>
 
+  <!-- 开发者工具 -->
+  <view class="card-container">
+    <view class="menu-item" bindtap="importQuestions">
+      <view class="menu-left">
+        <view class="menu-icon">📤</view>
+        <view class="menu-text">导入题库数据(开发专用)</view>
+      </view>
+      <view class="menu-right">
+        <text class="menu-arrow">→</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 登录/完善资料弹窗 -->
   <view class="login-modal" wx:if="{{showLoginModal}}">
     <view class="modal-mask" bindtap="closeLoginModal"></view>

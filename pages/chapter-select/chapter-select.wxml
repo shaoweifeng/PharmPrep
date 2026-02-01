@@ -1,0 +1,51 @@
+<!-- pages/chapter-select/chapter-select.wxml -->
+<view class="page-container">
+  <view class="header">
+    <view class="subject-title">{{subjectName}}</view>
+  </view>
+
+  <view class="filter-container">
+    <view class="filter-item">
+      <view class="filter-label">教材</view>
+      <picker bindchange="onTextbookChange" value="{{textbookIndex}}" range="{{textbookList}}">
+        <view class="picker">
+          {{textbookList[textbookIndex] || '请选择教材'}}
+          <text class="arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+    
+    <view class="filter-item">
+      <view class="filter-label">章节</view>
+      <picker bindchange="onChapterChange" value="{{chapterIndex}}" range="{{chapterList}}">
+        <view class="picker">
+          {{chapterList[chapterIndex] || '请选择章节'}}
+          <text class="arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <scroll-view class="question-list" scroll-y bindscrolltolower="onLoadMore">
+    <view class="question-item" wx:for="{{questionList}}" wx:key="_id" bindtap="onQuestionTap" data-index="{{index}}" data-id="{{item._id}}">
+      <view class="question-no">{{index + 1}}.</view>
+      <view class="question-content">{{item.question}}</view>
+      <view class="question-type">{{item.type === 1 ? '单选' : '多选'}}</view>
+    </view>
+    
+    <view class="loading-state" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+    <view class="empty-state" wx:if="{{!loading && questionList.length === 0}}">
+      <text>暂无题目</text>
+    </view>
+    <view class="no-more-state" wx:if="{{!loading && questionList.length > 0 && isOver}}">
+      <text>没有更多了</text>
+    </view>
+  </scroll-view>
+
+  <view class="footer">
+    <button class="btn btn-secondary" bindtap="onBack">返回</button>
+    <button class="btn btn-primary" bindtap="onStartPractice">开始刷题</button>
+  </view>
+</view>

@@ -27,19 +27,19 @@
         <view class="grid-icon">
           <image src="{{iconList.exercise}}" mode="aspectFit"></image>
         </view>
-        <view class="grid-text">科目选择</view>
+        <view class="grid-text">选择题速刷</view>
       </view>
       <view class="grid-item" bindtap="navigateToEssay">
         <view class="grid-icon">
           <image src="{{iconList.essay}}" mode="aspectFit"></image>
         </view>
-        <view class="grid-text">习题大题带背</view>
+        <view class="grid-text">大题带背</view>
       </view>
       <view class="grid-item" bindtap="navigateToTrueExam">
         <view class="grid-icon">
           <image src="{{iconList.trueExam}}" mode="aspectFit"></image>
         </view>
-        <view class="grid-text">高校真题合集</view>
+        <view class="grid-text">高校真题</view>
       </view>
       <view class="grid-item" bindtap="navigateToKnowledge">
         <view class="grid-icon">
@@ -57,7 +57,7 @@
         <view class="grid-icon">
           <image src="{{iconList.explaination}}" mode="aspectFit"></image>
         </view>
-        <view class="grid-text">名词解释带背</view>
+        <view class="grid-text">名词解释</view>
       </view>
     </view>
   </view>

@@ -1,7 +1,7 @@
 <!-- pages/term/term.wxml -->
 <view class="page-container">
   <view class="card-container">
-    <view class="section-title">名词解释带背</view>
+    <view class="section-title">名词解释</view>
     <view class="term-tabs">
       <view class="tab-item {{activeTab === item.id ? 'active' : ''}}" wx:for="{{termTabs}}" wx:key="id" bindtap="switchTab" data-tab-id="{{item.id}}">
         {{item.name}}
