@@ -1,0 +1,24 @@
+.container {
+  padding: 20px;
+}
+.title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+.desc {
+  margin-bottom: 30px;
+  color: #666;
+}
+.log-container {
+  margin-top: 20px;
+  padding: 10px;
+  background: #f5f5f5;
+  min-height: 200px;
+  border-radius: 8px;
+}
+.log-text {
+  font-size: 12px;
+  color: #333;
+  white-space: pre-wrap;
+}

@@ -60,19 +60,18 @@ Page({
 
     // 1. 准备轮播图数据
     // 首帧不渲染 cloud://，先清空 imageUrl，待获取临时链接后再填充
-    const bannerList = (this.data.bannerList || []).map(item => ({ ...item, imageUrl: '' }))
+    const bannerList = (this.data.bannerList || []).map(item => Object.assign({}, item, { imageUrl: '' }))
 
     // 2. 准备推荐列表数据
     const recommendList = this.data.recommendList.map(item => {
       // 提取原始文件名
       const fileName = item.cloudPath
-      return {
-        ...item,
+      return Object.assign({}, item, {
         // 先置空，等待换取链接
         imageUrl: '',
         // 暂存云文件ID
         cloudFileID: `${cloudBase}/recomands/${fileName}` 
-      }
+      })
     })
 
     // 3. 准备功能区图标数据

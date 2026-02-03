@@ -1,0 +1,10 @@
+<view class="container">
+  <view class="title">题库导入工具</view>
+  <view class="desc">检测到待导入题目：{{questionCount}} 道。</view>
+  
+  <button type="primary" bindtap="startImport" loading="{{importing}}" disabled="{{importing}}">开始导入</button>
+  
+  <view class="log-container">
+    <text class="log-text">{{logs}}</text>
+  </view>
+</view>

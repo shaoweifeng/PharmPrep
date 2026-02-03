@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/db-importer/index",
     "pages/exercise/exercise",
     "pages/chapter-select/chapter-select",
     "pages/exercise/exerciseDetail",

@@ -7,9 +7,9 @@
   <view class="filter-container">
     <view class="filter-item">
       <view class="filter-label">教材</view>
-      <picker bindchange="onTextbookChange" value="{{textbookIndex}}" range="{{textbookList}}">
-        <view class="picker">
-          {{textbookList[textbookIndex] || '请选择教材'}}
+      <picker class="picker-container" bindchange="onTextbookChange" value="{{textbookIndex}}" range="{{textbookList}}" disabled="{{false}}">
+        <view class="picker-content {{!textbookList[textbookIndex] ? 'empty' : ''}}">
+          <view class="picker-text">{{textbookList[textbookIndex] || '请选择教材'}}</view>
           <text class="arrow">▼</text>
         </view>
       </picker>
@@ -17,9 +17,9 @@
     
     <view class="filter-item">
       <view class="filter-label">章节</view>
-      <picker bindchange="onChapterChange" value="{{chapterIndex}}" range="{{chapterList}}">
-        <view class="picker">
-          {{chapterList[chapterIndex] || '请选择章节'}}
+      <picker class="picker-container" bindchange="onChapterChange" value="{{chapterIndex}}" range="{{chapterNames}}" disabled="{{false}}">
+        <view class="picker-content">
+          <view class="picker-text">{{chapterNames[chapterIndex]}}</view>
           <text class="arrow">▼</text>
         </view>
       </picker>
@@ -27,21 +27,38 @@
   </view>
 
   <scroll-view class="question-list" scroll-y bindscrolltolower="onLoadMore">
-    <view class="question-item" wx:for="{{questionList}}" wx:key="_id" bindtap="onQuestionTap" data-index="{{index}}" data-id="{{item._id}}">
-      <view class="question-no">{{index + 1}}.</view>
-      <view class="question-content">{{item.question}}</view>
-      <view class="question-type">{{item.type === 1 ? '单选' : '多选'}}</view>
-    </view>
-    
-    <view class="loading-state" wx:if="{{loading}}">
-      <text>加载中...</text>
-    </view>
-    <view class="empty-state" wx:if="{{!loading && questionList.length === 0}}">
-      <text>暂无题目</text>
-    </view>
-    <view class="no-more-state" wx:if="{{!loading && questionList.length > 0 && isOver}}">
-      <text>没有更多了</text>
-    </view>
+    <!-- 章节列表视图 -->
+    <block wx:if="{{isAllChapters}}">
+      <view class="chapter-item" wx:for="{{displayChapterList}}" wx:key="_id" bindtap="onChapterTap" data-index="{{index}}">
+        <view class="chapter-info">
+          <view class="chapter-name">{{item.name}}</view>
+          <view class="chapter-progress">{{item.finished}}/{{item.total}}</view>
+        </view>
+        <view class="chapter-arrow">›</view>
+      </view>
+      <view class="empty-state" wx:if="{{displayChapterList.length === 0}}">
+        <text>暂无章节</text>
+      </view>
+    </block>
+
+    <!-- 题目列表视图 -->
+    <block wx:else>
+      <view class="question-item" wx:for="{{questionList}}" wx:key="_id" bindtap="onQuestionTap" data-index="{{index}}" data-id="{{item._id}}">
+        <view class="question-no">{{index + 1}}.</view>
+        <view class="question-content">{{item.question}}</view>
+        <view class="question-type">{{item.type === 1 ? '单选' : '多选'}}</view>
+      </view>
+      
+      <view class="loading-state" wx:if="{{loading}}">
+        <text>加载中...</text>
+      </view>
+      <view class="empty-state" wx:if="{{!loading && questionList.length === 0}}">
+        <text>暂无题目</text>
+      </view>
+      <view class="no-more-state" wx:if="{{!loading && questionList.length > 0 && isOver}}">
+        <text>没有更多了</text>
+      </view>
+    </block>
   </scroll-view>
 
   <view class="footer">

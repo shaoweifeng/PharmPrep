@@ -47,10 +47,16 @@ exports.main = async (event, context) => {
       const res = await db.collection('questions')
         .aggregate()
         .match(matchQuery)
-        .group({ _id: '$chapter' })
+        .group({ 
+          _id: '$chapter',
+          count: db.command.aggregate.sum(1)
+        })
         .end()
       
-      const list = res.list.map(i => i._id).filter(Boolean)
+      const list = res.list.map(i => ({
+        name: i._id,
+        count: i.count
+      })).filter(i => i.name)
       
       // 章节排序逻辑：提取中文数字进行排序
       const chnToNum = (chnStr) => {
@@ -93,7 +99,7 @@ exports.main = async (event, context) => {
            const match = str.match(/第(.+)章/)
            return match ? chnToNum(match[1]) : 0
         }
-        return getNum(a) - getNum(b)
+        return getNum(a.name) - getNum(b.name)
       })
 
       return { code: 0, data: list }
