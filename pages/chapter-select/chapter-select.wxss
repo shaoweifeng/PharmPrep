@@ -67,6 +67,7 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  pointer-events: none; /* 关键：让点击事件穿透到 picker 组件 */
 }
 
 .picker-content.empty {
@@ -130,6 +131,16 @@
   background-color: #f0f2f5;
   padding: 6rpx 16rpx;
   border-radius: 20rpx;
+}
+
+.chapter-progress.completed {
+  background-color: #e8f5e9;
+  color: #27ae60;
+}
+
+.chapter-progress.in-progress {
+  background-color: #e1f5fe;
+  color: #2980b9;
 }
 
 .chapter-arrow {

@@ -44,6 +44,22 @@ exports.main = async (event, context) => {
       const matchQuery = { textbook }
       if (subject) matchQuery.subject = subject
 
+      // [优化] 尝试从缓存集合读取章节列表
+      try {
+        const cacheRes = await db.collection('catalogs').where({
+          subject,
+          textbook
+        }).get()
+        
+        if (cacheRes.data.length > 0) {
+          console.log('Hit chapters cache')
+          return { code: 0, data: cacheRes.data[0].chapters }
+        }
+      } catch (err) {
+        // 集合不存在或读取失败，忽略错误，降级为实时聚合
+        console.warn('Cache lookup failed (catalogs collection might not exist):', err)
+      }
+
       const res = await db.collection('questions')
         .aggregate()
         .match(matchQuery)
@@ -86,6 +102,7 @@ exports.main = async (event, context) => {
               } else {
                 if (number === 0 && unit === 10) number = 1
                 section += (number * unit)
+                // 修复：处理 "十" 开头的情况
               }
               number = 0
             }
@@ -101,6 +118,27 @@ exports.main = async (event, context) => {
         }
         return getNum(a.name) - getNum(b.name)
       })
+
+      // [优化] 将计算结果写入缓存
+      try {
+        // 先检查是否存在旧缓存（理论上前面没读到就是没有，但为了稳健）
+        // 这里简化策略：直接 add，如果要做更新需要更复杂逻辑
+        // 为避免重复，先 count
+        const countRes = await db.collection('catalogs').where({ subject, textbook }).count()
+        if (countRes.total === 0) {
+           await db.collection('catalogs').add({
+             data: {
+               subject,
+               textbook,
+               chapters: list,
+               updateTime: db.serverDate()
+             }
+           })
+           console.log('Cache saved')
+        }
+      } catch (err) {
+        console.warn('Cache save failed:', err)
+      }
 
       return { code: 0, data: list }
     }

@@ -93,7 +93,7 @@ Page({
 
   // 加载回顾模式的题目列表
   loadReviewQuestions(reviewList, initialListIndex) {
-    const ids = [...new Set(reviewList.map(item => item.questionId))].filter(id => id)
+    const ids = Array.from(new Set(reviewList.map(item => item.questionId))).filter(id => id)
     if (ids.length === 0) return
 
     wx.showLoading({ title: '加载题目...' })
@@ -142,20 +142,18 @@ Page({
                 isSelected = userAnswer === opt.id
               }
 
-              return {
-                ...opt,
+              return Object.assign({}, opt, {
                 isCorrect: isOptCorrect,
                 selected: isSelected
-              }
+              })
             })
 
-            return {
-              ...formatted,
+            return Object.assign({}, formatted, {
               options: markedOptions,
               myAnswer: userAnswer,
               userIsCorrect: isCorrect,
               recordId: item._id
-            }
+            })
           }).filter(q => q !== null)
 
           const currentIndex = parseInt(initialListIndex) || 0
@@ -285,10 +283,9 @@ Page({
           // 更新题目列表中的状态（收藏、是否做过）
           const newQuestionList = this.data.questionList.map(q => {
             const isFav = favoriteIds.includes(String(q.id))
-            return {
-              ...q,
+            return Object.assign({}, q, {
               isFavorite: isFav
-            }
+            })
           })
 
           const updateData = {
@@ -305,10 +302,10 @@ Page({
                  // 如果不恢复进度（review模式），只需更新当前题目的收藏状态
                  const currentQ = this.data.currentQuestion
                  if (currentQ) {
-                     updateData.currentQuestion = {
-                       ...currentQ,
-                       isFavorite: newQuestionList[this.data.currentIndex]?.isFavorite || false
-                     }
+                     const currentQInList = newQuestionList[this.data.currentIndex]
+                     updateData.currentQuestion = Object.assign({}, currentQ, {
+                       isFavorite: (currentQInList && currentQInList.isFavorite) || false
+                     })
                  }
               }
           }
@@ -400,14 +397,12 @@ Page({
       userAnswer.sort() // 排序以便比较
 
       // 更新 options 选中状态
-      options = options.map(opt => ({
-        ...opt,
+      options = options.map(opt => Object.assign({}, opt, {
         selected: userAnswer.includes(opt.id)
       }))
     } else { // 单选或判断
       userAnswer = id
-      options = options.map(opt => ({
-        ...opt,
+      options = options.map(opt => Object.assign({}, opt, {
         selected: opt.id === id
       }))
     }
@@ -451,10 +446,9 @@ Page({
       } else {
         isOptCorrect = currentQuestion.correctAnswer === opt.id
       }
-      return {
-        ...opt,
+      return Object.assign({}, opt, {
         isCorrect: isOptCorrect
-      }
+      })
     })
 
     this.setData({
@@ -481,7 +475,7 @@ Page({
         currentIndex
       },
       success: res => {
-        console.log('答案提交成功', res)
+        // console.log('答案提交成功', res)
       },
       fail: err => {
         console.error('答案提交失败', err)
@@ -498,7 +492,7 @@ Page({
     
     // 更新本地题目列表中的状态
     const { currentIndex, questionList, currentQuestion } = this.data
-    const newQuestionList = [...questionList]
+    const newQuestionList = questionList.concat([])
     newQuestionList[currentIndex].isFavorite = isFavorite
     this.setData({
       questionList: newQuestionList

@@ -190,10 +190,8 @@ Page({
           // 构建 Picker 用的名称列表，首项为 "全部章节"
           // 过滤掉没有 name 的无效项
           const validChapters = rawChapterList.filter(i => i && typeof i.name === 'string')
-          const chapterNames = ['全部章节', ...validChapters.map(i => i.name)]
+          const chapterNames = ['全部章节'].concat(validChapters.map(i => i.name))
           
-          console.log('Loaded chapters:', chapterNames) // Debug log
-
           this.setData({
             rawChapterList: validChapters,
             chapterNames,
@@ -247,11 +245,22 @@ Page({
       }
       
       const finished = userProgressMap[chapterNum] || 0
+      const total = item.count
+      const displayFinished = finished > total ? total : finished
+      
+      let statusClass = ''
+      if (displayFinished >= total && total > 0) {
+        statusClass = 'completed'
+      } else if (displayFinished > 0) {
+        statusClass = 'in-progress'
+      }
+
       return {
         name: item.name,
-        total: item.count,
-        finished: finished > item.count ? item.count : finished, // 防御性编程
-        _id: item.name // 使用名称作为 key
+        total: total,
+        finished: displayFinished,
+        _id: item.name, // 使用名称作为 key
+        statusClass
       }
     }).filter(item => item !== null)
     
@@ -358,7 +367,6 @@ Page({
     const index = e.currentTarget.dataset.index // 在 rawChapterList 中的索引
     // 切换到该章节的题目列表视图
     // 对应的 picker index 是 index + 1
-    console.log("index+1 = ", index + 1)
     this.setData({
       chapterIndex: index + 1,
       isAllChapters: false,

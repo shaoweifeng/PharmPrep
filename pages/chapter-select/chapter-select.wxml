@@ -32,7 +32,7 @@
       <view class="chapter-item" wx:for="{{displayChapterList}}" wx:key="_id" bindtap="onChapterTap" data-index="{{index}}">
         <view class="chapter-info">
           <view class="chapter-name">{{item.name}}</view>
-          <view class="chapter-progress">{{item.finished}}/{{item.total}}</view>
+          <view class="chapter-progress {{item.statusClass}}">{{item.finished}}/{{item.total}}</view>
         </view>
         <view class="chapter-arrow">›</view>
       </view>

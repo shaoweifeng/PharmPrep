@@ -42,6 +42,27 @@ exports.main = async (event, context) => {
     }
   }
 
+  // [优化] 清除涉及教材的章节缓存，以便下次读取时重新计算
+  const affected = new Set()
+  questions.forEach(q => {
+    if (q.subject && q.textbook) {
+      affected.add(`${q.subject}::${q.textbook}`)
+    }
+  })
+
+  if (affected.size > 0) {
+    try {
+      for (const key of affected) {
+        const [subject, textbook] = key.split('::')
+        // 删除该教材对应的缓存记录
+        await db.collection('catalogs').where({ subject, textbook }).remove()
+      }
+      console.log('Cache cleared for:', Array.from(affected))
+    } catch (err) {
+      console.warn('Cache clear failed (catalogs collection might not exist):', err)
+    }
+  }
+
   return {
     code: 0,
     results

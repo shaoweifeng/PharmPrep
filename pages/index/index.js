@@ -102,7 +102,7 @@ Page({
     const iconIDs = Object.values(this.data.iconList)
     
     // 合并去重
-    const allFileIDs = [...new Set([...bannerIDs, ...recommendIDs, ...iconIDs])].filter(id => id.startsWith('cloud://'))
+    const allFileIDs = Array.from(new Set(bannerIDs.concat(recommendIDs).concat(iconIDs))).filter(id => id.startsWith('cloud://'))
     
     if (allFileIDs.length === 0) return
 
@@ -124,18 +124,16 @@ Page({
         // 1. 更新 Banner
         const newBannerList = this.data.bannerList.map(item => {
           const link = String(item.link || '').trim()
-          return {
-            ...item,
+          return Object.assign({}, item, {
             imageUrl: urlMap.get(link) || ''
-          }
+          })
         })
 
         // 2. 更新 Recommend
         const newRecommendList = this.data.recommendList.map(item => {
-          return {
-            ...item,
+          return Object.assign({}, item, {
             imageUrl: urlMap.get(item.cloudFileID) || ''
-          }
+          })
         })
 
         // 3. 更新 Icons
